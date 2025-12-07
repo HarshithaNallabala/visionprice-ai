@@ -1,25 +1,52 @@
 import { PropertyEstimate } from '@/store/propertyStore';
 
-// Bangalore localities with realistic data
+// Bangalore localities with realistic data and coordinates for map tiles
 export const localities = [
-  { name: 'Indiranagar', avgPrice: 15000, growth: 8.5 },
-  { name: 'Koramangala', avgPrice: 14500, growth: 9.2 },
-  { name: 'HSR Layout', avgPrice: 12000, growth: 11.3 },
-  { name: 'Whitefield', avgPrice: 8500, growth: 12.8 },
-  { name: 'Electronic City', avgPrice: 6500, growth: 10.5 },
-  { name: 'Marathahalli', avgPrice: 9000, growth: 8.9 },
-  { name: 'Jayanagar', avgPrice: 16000, growth: 6.2 },
-  { name: 'JP Nagar', avgPrice: 11000, growth: 7.8 },
-  { name: 'Hebbal', avgPrice: 10500, growth: 9.5 },
-  { name: 'Yelahanka', avgPrice: 7500, growth: 13.2 },
-  { name: 'Sarjapur Road', avgPrice: 8000, growth: 14.5 },
-  { name: 'Bellandur', avgPrice: 9500, growth: 11.8 },
-  { name: 'Banashankari', avgPrice: 10000, growth: 6.8 },
-  { name: 'BTM Layout', avgPrice: 11500, growth: 8.4 },
-  { name: 'Malleshwaram', avgPrice: 17000, growth: 5.5 },
+  { name: 'Indiranagar', avgPrice: 15000, growth: 8.5, lat: 12.9774, lng: 77.6410 },
+  { name: 'Koramangala', avgPrice: 14500, growth: 9.2, lat: 12.9279, lng: 77.6284 },
+  { name: 'HSR Layout', avgPrice: 12000, growth: 11.3, lat: 12.9128, lng: 77.6377 },
+  { name: 'Whitefield', avgPrice: 8500, growth: 12.8, lat: 12.9698, lng: 77.7634 },
+  { name: 'Electronic City', avgPrice: 6500, growth: 10.5, lat: 12.8456, lng: 77.6603 },
+  { name: 'Marathahalli', avgPrice: 9000, growth: 8.9, lat: 12.9445, lng: 77.7033 },
+  { name: 'Jayanagar', avgPrice: 16000, growth: 6.2, lat: 12.9308, lng: 77.5838 },
+  { name: 'JP Nagar', avgPrice: 11000, growth: 7.8, lat: 12.9063, lng: 77.5857 },
+  { name: 'Hebbal', avgPrice: 10500, growth: 9.5, lat: 13.0358, lng: 77.5970 },
+  { name: 'Yelahanka', avgPrice: 7500, growth: 13.2, lat: 13.1007, lng: 77.5963 },
+  { name: 'Sarjapur Road', avgPrice: 8000, growth: 14.5, lat: 12.9107, lng: 77.6871 },
+  { name: 'Bellandur', avgPrice: 9500, growth: 11.8, lat: 12.9261, lng: 77.6781 },
+  { name: 'Banashankari', avgPrice: 10000, growth: 6.8, lat: 12.9255, lng: 77.5468 },
+  { name: 'BTM Layout', avgPrice: 11500, growth: 8.4, lat: 12.9166, lng: 77.6101 },
+  { name: 'Malleshwaram', avgPrice: 17000, growth: 5.5, lat: 13.0035, lng: 77.5710 },
 ];
 
 export const propertyTypes = ['Apartment', 'Villa', 'Independent House', 'Penthouse'];
+
+// Generate real map tile URLs (same logic as Python backend)
+const getMapImages = (locality: string) => {
+  const localityData = localities.find((l) => l.name === locality);
+  const lat = localityData?.lat || 12.9716;
+  const lng = localityData?.lng || 77.5946;
+
+  // Web Mercator tile math at zoom level 16
+  const z = 16;
+  const latRad = (lat * Math.PI) / 180;
+  const n = Math.pow(2, z);
+  const xTile = Math.floor(((lng + 180.0) / 360.0) * n);
+  const yTile = Math.floor(
+    ((1.0 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2.0) * n
+  );
+
+  // Esri World Imagery for satellite view
+  const satelliteUrl = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${yTile}/${xTile}`;
+
+  // OpenStreetMap for street view
+  const streetUrl = `https://tile.openstreetmap.org/${z}/${xTile}/${yTile}.png`;
+
+  return {
+    satellite_url: satelliteUrl,
+    street_url: streetUrl,
+  };
+};
 
 // Generate random infra scores
 const generateInfraScores = (locality: string) => {
@@ -41,7 +68,7 @@ const generateInfraScores = (locality: string) => {
   };
 };
 
-// Mock property estimation API
+// Property estimation API
 export const estimateProperty = async (params: {
   locality: string;
   area_sqft: number;
@@ -82,6 +109,9 @@ export const estimateProperty = async (params: {
   const after1Year = totalPrice * (1 + growthRate / 100);
   const after5Years = totalPrice * Math.pow(1 + growthRate / 100, 5);
 
+  // Get real map tile images
+  const images = getMapImages(params.locality);
+
   return {
     id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     ...params,
@@ -106,10 +136,7 @@ export const estimateProperty = async (params: {
       after_5_years_lakhs: Math.round(after5Years * 100) / 100,
       growth_rate: growthRate,
     },
-    images: {
-      satellite_url: `https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&h=400&fit=crop`,
-      street_url: `https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop`,
-    },
+    images,
     timestamp: Date.now(),
   };
 };
@@ -179,9 +206,6 @@ export const portfolioProperties: PropertyEstimate[] = localities.slice(0, 12).m
     after_5_years_lakhs: 0,
     growth_rate: locality.growth,
   },
-  images: {
-    satellite_url: `https://images.unsplash.com/photo-154532441${8 + index}-cc1a3fa10c00?w=600&h=400&fit=crop`,
-    street_url: `https://images.unsplash.com/photo-156044820${4 + index}-e02f11c3d0e2?w=600&h=400&fit=crop`,
-  },
+  images: getMapImages(locality.name),
   timestamp: Date.now() - index * 86400000,
 }));
