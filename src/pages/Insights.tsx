@@ -9,11 +9,23 @@ import { cn } from '@/lib/utils';
 
 const Insights = () => {
   const [timeRange, setTimeRange] = useState<'1Y' | '5Y'>('1Y');
-  const [sortBy, setSortBy] = useState<'price' | 'growth'>('price');
+  const [sortBy, setSortBy] = useState<'priceHigh' | 'priceLow' | 'growthHigh' | 'growthLow' | 'nameAZ'>('priceHigh');
 
   const sortedLocalities = [...localities].sort((a, b) => {
-    if (sortBy === 'price') return b.avgPrice - a.avgPrice;
-    return b.growth - a.growth;
+    switch (sortBy) {
+      case 'priceHigh':
+        return b.avgPrice - a.avgPrice;
+      case 'priceLow':
+        return a.avgPrice - b.avgPrice;
+      case 'growthHigh':
+        return b.growth - a.growth;
+      case 'growthLow':
+        return a.growth - b.growth;
+      case 'nameAZ':
+        return a.name.localeCompare(b.name);
+      default:
+        return 0;
+    }
   });
 
   const topGrowth = [...localities].sort((a, b) => b.growth - a.growth).slice(0, 3);
@@ -133,18 +145,39 @@ const Insights = () => {
               <span className="text-sm text-muted-foreground">Sort by:</span>
             </div>
             <Button
-              variant={sortBy === 'price' ? 'premium' : 'outline'}
+              variant={sortBy === 'priceHigh' ? 'premium' : 'outline'}
               size="sm"
-              onClick={() => setSortBy('price')}
+              onClick={() => setSortBy('priceHigh')}
             >
               Price (High to Low)
             </Button>
             <Button
-              variant={sortBy === 'growth' ? 'premium' : 'outline'}
+              variant={sortBy === 'priceLow' ? 'premium' : 'outline'}
               size="sm"
-              onClick={() => setSortBy('growth')}
+              onClick={() => setSortBy('priceLow')}
             >
-              Growth Rate
+              Price (Low to High)
+            </Button>
+            <Button
+              variant={sortBy === 'growthHigh' ? 'premium' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy('growthHigh')}
+            >
+              Growth (High to Low)
+            </Button>
+            <Button
+              variant={sortBy === 'growthLow' ? 'premium' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy('growthLow')}
+            >
+              Growth (Low to High)
+            </Button>
+            <Button
+              variant={sortBy === 'nameAZ' ? 'premium' : 'outline'}
+              size="sm"
+              onClick={() => setSortBy('nameAZ')}
+            >
+              Name (A-Z)
             </Button>
             <div className="ml-auto flex gap-2">
               <Button
