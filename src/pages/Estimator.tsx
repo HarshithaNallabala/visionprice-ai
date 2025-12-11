@@ -92,6 +92,8 @@ const Estimator = () => {
     { label: 'Parks', value: result.infra_scores.parks },
     { label: 'Low Pollution', value: result.infra_scores.pollution },
     { label: 'Low Noise', value: result.infra_scores.noise },
+    { label: 'Density', value: 10 - (result.infra_scores.building_density / 10) }, // Lower density = better
+    { label: 'Similarity', value: result.infra_scores.similarity_score * 10 }, // Scale to 0-10
   ] : [];
 
   return (
@@ -396,14 +398,14 @@ const Estimator = () => {
                     {/* Infra Scores */}
                     <div className="glass-card p-6 rounded-xl">
                       <h3 className="font-display font-bold text-lg mb-6">Infrastructure Scores</h3>
-                      <div className="grid grid-cols-5 gap-4">
+                      <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
                         {infraMetrics.map((metric) => (
                           <InfraScoreRing
                             key={metric.label}
                             score={metric.value}
                             label={metric.label}
-                            size={70}
-                            strokeWidth={5}
+                            size={60}
+                            strokeWidth={4}
                           />
                         ))}
                       </div>

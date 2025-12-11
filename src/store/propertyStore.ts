@@ -23,6 +23,8 @@ export interface PropertyEstimate {
     hospitals: number;
     parks: number;
     metro_distance_km: number;
+    building_density: number;
+    similarity_score: number;
   };
   future_prices: {
     after_1_year_lakhs: number;

@@ -48,23 +48,41 @@ const getMapImages = (locality: string) => {
   };
 };
 
-// Generate random infra scores
+// Generate infra scores matching backend response structure
+// Backend returns: greenery_percent, building_density, road_quality, noise_level, 
+// water_availability, internet_quality, schools_nearby, hospitals_nearby, parks_nearby, similarity_score
 const generateInfraScores = (locality: string) => {
   const localityData = localities.find((l) => l.name === locality);
   const baseScore = localityData ? (localityData.avgPrice / 2000) : 5;
   
+  // Simulate backend-like scores (scaled 0-100 for some, 0-10 for others)
+  const greeneryPercent = Math.min(100, Math.max(20, baseScore * 8 + (Math.random() - 0.5) * 30));
+  const buildingDensity = Math.min(100, Math.max(30, 100 - baseScore * 5 + (Math.random() - 0.5) * 20));
+  const roadQuality = Math.min(10, Math.max(5, baseScore + (Math.random() - 0.5) * 2));
+  const noiseLevel = Math.min(10, Math.max(3, 10 - baseScore + (Math.random() - 0.5) * 3));
+  const waterAvailability = Math.min(10, Math.max(5, baseScore + (Math.random() - 0.5) * 3));
+  const internetQuality = Math.min(10, Math.max(6, baseScore + (Math.random() - 0.5) * 2));
+  const schoolsNearby = Math.floor(Math.max(3, Math.min(12, baseScore + Math.random() * 5)));
+  const hospitalsNearby = Math.floor(Math.max(2, Math.min(8, baseScore * 0.8 + Math.random() * 3)));
+  const parksNearby = Math.floor(Math.max(1, Math.min(6, baseScore * 0.5 + Math.random() * 3)));
+  const similarityScore = Math.min(1, Math.max(0.5, 0.7 + Math.random() * 0.25));
+
   return {
-    power: Math.min(10, Math.max(6, baseScore + (Math.random() - 0.5) * 2)),
-    internet: Math.min(10, Math.max(6, baseScore + (Math.random() - 0.5) * 2)),
-    water: Math.min(10, Math.max(5, baseScore + (Math.random() - 0.5) * 3)),
-    greenery: Math.min(10, Math.max(4, baseScore + (Math.random() - 0.5) * 4)),
-    road: Math.min(10, Math.max(6, baseScore + (Math.random() - 0.5) * 2)),
-    pollution: Math.min(10, Math.max(3, 10 - baseScore + (Math.random() - 0.5) * 2)),
-    noise: Math.min(10, Math.max(3, 10 - baseScore + (Math.random() - 0.5) * 3)),
-    schools: Math.min(10, Math.max(5, baseScore + (Math.random() - 0.5) * 2)),
-    hospitals: Math.min(10, Math.max(5, baseScore + (Math.random() - 0.5) * 2)),
-    parks: Math.min(10, Math.max(4, baseScore + (Math.random() - 0.5) * 3)),
+    // Mapped to UI expectations (normalized to 0-10 scale for display)
+    power: Math.min(10, Math.max(6, baseScore + (Math.random() - 0.5) * 2)), // fallback
+    internet: internetQuality,
+    water: waterAvailability,
+    greenery: greeneryPercent / 10, // Convert percent to 0-10 scale
+    road: roadQuality,
+    pollution: Math.min(10, Math.max(3, 10 - buildingDensity / 10)), // Inverse of density
+    noise: 10 - noiseLevel, // Inverse for "Low Noise" display
+    schools: Math.min(10, schoolsNearby),
+    hospitals: Math.min(10, hospitalsNearby),
+    parks: Math.min(10, parksNearby * 1.5),
     metro_distance_km: Math.max(0.5, Math.min(8, 10 - baseScore + Math.random() * 3)),
+    // New backend fields
+    building_density: buildingDensity,
+    similarity_score: similarityScore,
   };
 };
 
@@ -118,7 +136,6 @@ export const estimateProperty = async (params: {
     predicted_price_lakhs: Math.round(totalPrice * 100) / 100,
     price_per_sqft: pricePerSqft,
     infra_scores: {
-      ...infraScores,
       power: Math.round(infraScores.power * 10) / 10,
       internet: Math.round(infraScores.internet * 10) / 10,
       water: Math.round(infraScores.water * 10) / 10,
@@ -130,6 +147,8 @@ export const estimateProperty = async (params: {
       hospitals: Math.round(infraScores.hospitals * 10) / 10,
       parks: Math.round(infraScores.parks * 10) / 10,
       metro_distance_km: Math.round(infraScores.metro_distance_km * 10) / 10,
+      building_density: Math.round(infraScores.building_density * 10) / 10,
+      similarity_score: Math.round(infraScores.similarity_score * 100) / 100,
     },
     future_prices: {
       after_1_year_lakhs: Math.round(after1Year * 100) / 100,
